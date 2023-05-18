@@ -27,7 +27,11 @@ class NewsDataset(Dataset):
 
     def __getitem__(self, item):
         tokenized_sentence = word_tokenize(self.dataset.loc[item, 'News'])
-        sentence = [self.embedding[token] for token in tokenized_sentence]
+        try:
+            sentence = [self.embedding[token] for token in tokenized_sentence]
+        except:
+            sentence = [self.embedding.get_word_vector(token) for token in tokenized_sentence]
+            
         n = len(sentence)
 
         y = torch.zeros(3)

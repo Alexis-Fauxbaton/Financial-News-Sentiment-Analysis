@@ -3,7 +3,7 @@ from sklearn import metrics
 import numpy as np
 import torch
 from torch import nn, optim
-from sklearn.metrics import confusion_matrix
+from sklearn.metrics import confusion_matrix, f1_score
 
 
 def get_accuracy(output, target):
@@ -26,11 +26,23 @@ def get_confusion_matrix(output, target):
     y_true = np.argmax(y_true, axis=-1)
     return confusion_matrix(y_true, y_pred, labels=[0, 1, 2])
 
+def get_f1_score(output, target):
+    y_true = target.detach().numpy()
+    y_prob = output.detach().numpy()
+    y_pred = np.argmax(y_prob, axis=-1)
+    y_true = np.argmax(y_true, axis=-1)
+    return f1_score(y_true, y_pred, labels=[0, 1, 2])
 
 def train_lstm(model, train_dataset, val_dataset, epochs=30, lr=0.01, batch_size=128, num_layers=3, hidden_size=100,
-               device='CPU'):
-    train_loader = torch.utils.data.DataLoader(
-        train_dataset, batch_size=batch_size, shuffle=True)
+               device='CPU', train_sampler=None):
+    
+    
+    if train_sampler is not None:
+        train_loader = torch.utils.data.DataLoader(
+            train_dataset, batch_size=batch_size, shuffle=False, sampler=train_sampler)
+    else:
+        train_loader = torch.utils.data.DataLoader(
+            train_dataset, batch_size=batch_size, shuffle=True)
 
     val_loader = torch.utils.data.DataLoader(
         val_dataset, batch_size=batch_size, shuffle=True)
@@ -49,6 +61,7 @@ def train_lstm(model, train_dataset, val_dataset, epochs=30, lr=0.01, batch_size
     
     best_confusion_matrix = None
     best_acc = 0.0
+    best_f1 = 0.0
 
     for epoch in range(epochs):
         model = model.train()
